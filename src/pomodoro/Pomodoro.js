@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import classNames from "../utils/class-names";
 import useInterval from "../utils/useInterval";
 import { minutesToDuration } from "../utils/duration";
+import { secondsToDuration } from "../utils/duration";
 
 // These functions are defined outside of the component to insure they do not have access to state
 // and are, therefore more likely to be pure.
@@ -48,19 +49,15 @@ function nextSession(focusDuration, breakDuration) {
   };
 }
 
-function Pomodoro({
-  session,
-  setSession,
-  breakDuration,
-  setBreakDuration,
-  focusDuration,
-  setFocusDuration,
-}) {
+function Pomodoro() {
   // Timer starts out paused
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   // The current session - null where there is no session running
+  const [session, setSession] = useState(null);
 
   // ToDo: Allow the user to adjust the focus and break duration.
+  const [focusDuration, setFocusDuration] = useState(25);
+  const [breakDuration, setBreakDuration] = useState(5);
 
   const decreaseBreakHandler = () => {
     if (1 < breakDuration) {
@@ -96,7 +93,7 @@ function Pomodoro({
       }
       return setSession(nextTick);
     },
-    isTimerRunning ? 10 : null
+    isTimerRunning ? 1000 : null
   );
 
   /**
@@ -234,6 +231,55 @@ function Pomodoro({
           </div>
         </div>
       </div>
+      {session ? (
+        <div>
+          {/* TODO: This area should show only when there is an active focus or break - i.e. the session is running or is paused */}
+          <div className="row mb-2">
+            <div className="col">
+              {/* TODO: Update message below to include current session (Focusing or On Break) total duration */}
+              <h2 data-testid="session-title">
+                {session.label} for{" "}
+                {session.label === "On Break"
+                  ? minutesToDuration(breakDuration)
+                  : minutesToDuration(focusDuration)}{" "}
+                minutes
+              </h2>
+              {/* TODO: Update message below correctly format the time remaining in the current session */}
+              <p className="lead" data-testid="session-sub-title">
+                {secondsToDuration(session.timeRemaining)} remaining
+              </p>
+            </div>
+          </div>
+          <div className="row mb-2">
+            <div className="col">
+              <div className="progress" style={{ height: "20px" }}>
+                <div
+                  className="progress-bar"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow={
+                    session.label === "Focusing"
+                      ? (focusDuration * 60 - session.timeRemaining) *
+                        (100 / (focusDuration * 60))
+                      : (breakDuration * 60 - session.timeRemaining) *
+                        (100 / (breakDuration * 60))
+                  } // TODO: Increase aria-valuenow as elapsed time increases
+                  style={{
+                    width: `${
+                      session.label === "Focusing"
+                        ? (focusDuration * 60 - session.timeRemaining) *
+                          (100 / (focusDuration * 60))
+                        : (breakDuration * 60 - session.timeRemaining) *
+                          (100 / (breakDuration * 60))
+                    }%`,
+                  }} // TODO: Increase width % as elapsed time increases
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
